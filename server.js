@@ -20,6 +20,8 @@ app.listen(porta, function(){
 const welcome = require("./controllers/welcome")
 const criarJWT = require("./controllers/JwebToken")
 const categorias = require("./controllers/categorias")
+const produtos = require("./controllers/produtos")
 app.use(welcome)
 app.use(criarJWT)
 app.use(categorias)
+app.use(produtos)

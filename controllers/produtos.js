@@ -20,12 +20,13 @@ produtos.post("/criar/produto/:tokenJWT", function (req, res) {
                 status,
                 preco,
                 descricao,
-                img
+                img,
+                id_categoria
             } = req.body
 
             database.query(`
-            insert into public.produtos (nome, preco, descricao, status, img)
-            values('${nome}', '${preco}', '${descricao}', '${status}', '${img}')
+            insert into public.produtos (nome, preco, descricao, status, img, id_categoria)
+            values('${nome}', '${preco}', '${descricao}', '${status}', '${img}', ${id_categoria})
             `, function (erro) {
                 if (erro) {
 
@@ -94,7 +95,7 @@ produtos.get("/all/produtos/:token", function (req, res) {
     })
 })
 
-produtos.get("/categoriaid/produtos/:token/:id_categoria", function (req, res) {
+produtos.get("/produtoid/produtos/:token/:id_produto", function (req, res) {
 
     verificaJWT(req.params.token, function (erro, token_valido) {
 
@@ -107,18 +108,20 @@ produtos.get("/categoriaid/produtos/:token/:id_categoria", function (req, res) {
         else if (token_valido.data == "newLoginCasa") {
 
             database.query(`
-                select * from public.produtos where id_categoria = ${req.params.id_categoria}
-            `, function (erro, categoria) {
+                select * from public.produtos where id_produto = ${req.params.id_produto}
+            `, function (erro, produto) {
                 if (erro) {
+
                     res.send({
                         message: erro.message,
                         codigo: 400
                     })
                 }
                 else {
+
                     res.send({
                         codigo: 200,
-                        categoria: categoria.rows
+                        produto: produto.rows
                     })
                 }
             })
@@ -132,7 +135,7 @@ produtos.get("/categoriaid/produtos/:token/:id_categoria", function (req, res) {
     })
 })
 
-produtos.put("/editar/categoria/:tokenJWT", function (req, res) {
+produtos.put("/editar/produto/:tokenJWT", function (req, res) {
 
     verificaJWT(req.params.tokenJWT, function (erro, token_validado) {
         if (erro) {
@@ -144,13 +147,20 @@ produtos.put("/editar/categoria/:tokenJWT", function (req, res) {
         }
         else if (token_validado.data == "newLoginCasa") {
 
+            const {
+                id_produto,
+                nome,
+                status,
+                preco,
+                descricao,
+                img,
+                id_categoria
+            } = req.body
+
             database.query(`
-             UPDATE public.produtos 
-                SET 
-            categoria = '${req.body.categoria}', 
-            ativo = '${req.body.ativo}'
-            WHERE
-            id_categoria = ${req.body.id_categoria}
+            UPDATE public.produtos
+            SET preco='${preco}', status='${status}', img='${img}', nome='${nome}', descricao='${descricao}', id_categoria=${id_categoria}
+            WHERE id_produto = ${id_produto}
             `, function (erro) {
                 if (erro) {
 
@@ -161,7 +171,7 @@ produtos.put("/editar/categoria/:tokenJWT", function (req, res) {
                 } else {
 
                     res.send({
-                        message: "Categoria atualizada com sucesso.",
+                        message: "Produto atualizado com sucesso.",
                         codigo: 200
                     })
                 }
@@ -177,7 +187,7 @@ produtos.put("/editar/categoria/:tokenJWT", function (req, res) {
     })
 })
 
-produtos.delete("/del/categoria/:token/:id_categoria", function (req, res) {
+produtos.delete("/del/produto/:token/:id_produto", function (req, res) {
 
     verificaJWT(req.params.token, function (erro, token_validado) {
         if (erro) {
@@ -192,7 +202,7 @@ produtos.delete("/del/categoria/:token/:id_categoria", function (req, res) {
             database.query(`
             DELETE from public.produtos 
             WHERE
-            id_categoria = ${req.params.id_categoria}
+            id_produto = ${req.params.id_produto}
             `, function (erro) {
                 if (erro) {
 
@@ -203,7 +213,7 @@ produtos.delete("/del/categoria/:token/:id_categoria", function (req, res) {
                 } else {
 
                     res.send({
-                        message: "Categoria deletada com sucesso.",
+                        message: "Produto deletado com sucesso.",
                         codigo: 200
                     })
                 }

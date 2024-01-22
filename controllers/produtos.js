@@ -24,6 +24,8 @@ produtos.post("/criar/produto/:tokenJWT", function (req, res) {
                 id_categoria
             } = req.body
 
+            console.log(req.body)
+
             database.query(`
             insert into public.produtos (nome, preco, descricao, status, img, id_categoria)
             values('${nome}', '${preco}', '${descricao}', '${status}', '${img}', ${id_categoria})

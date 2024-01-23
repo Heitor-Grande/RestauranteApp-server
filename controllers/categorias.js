@@ -43,7 +43,7 @@ categorias.post("/criar/categoria/:tokenJWT", function (req, res) {
             })
         }
     })
-})
+}) 
 
 categorias.get("/all/categorias/:token", function (req, res) {
 
@@ -59,6 +59,44 @@ categorias.get("/all/categorias/:token", function (req, res) {
 
             database.query(`
                 select * from public.categorias
+            `, function (erro, categorias) {
+                if (erro) {
+                    res.send({
+                        message: erro.message,
+                        codigo: 400
+                    })
+                }
+                else {
+                    res.send({
+                        codigo: 200,
+                        categorias: categorias.rows
+                    })
+                }
+            })
+        }
+        else {
+            res.send({
+                message: "Token Inválido para carregar categorias",
+                codigo: 400
+            })
+        }
+    })
+})
+
+categorias.get("/all/categorias/ativas/:token", function (req, res) {
+
+    verificaJWT(req.params.token, function (erro, token_valido) {
+
+        if (erro) {
+            res.send({
+                codigo: 400,
+                message: "Erro ao validar token para carregar categorias"
+            })
+        }
+        else if (token_valido.data == "newLoginCasa") {
+
+            database.query(`
+                select * from public.categorias where ativo = 'true'
             `, function (erro, categorias) {
                 if (erro) {
                     res.send({

@@ -24,8 +24,6 @@ produtos.post("/criar/produto/:tokenJWT", function (req, res) {
                 id_categoria
             } = req.body
 
-            console.log(req.body)
-
             database.query(`
             insert into public.produtos (nome, preco, descricao, status, img, id_categoria)
             values('${nome}', '${preco}', '${descricao}', '${status}', '${img}', ${id_categoria})
@@ -226,6 +224,50 @@ produtos.delete("/del/produto/:token/:id_produto", function (req, res) {
             res.send({
                 message: "Token inválido",
                 codigo: 400
+            })
+        }
+    })
+})
+
+produtos.get("/carrega/produtos/by/categoria/:token/:id_categoria", function(req, res){
+
+    verificaJWT(req.params.token, function(erro, token_validado){
+
+        if(erro){
+
+            res.send({
+                codigo: 400,
+                message: erro.message
+            })
+        }
+        else if(token_validado.data == "newLoginCasa" || token_validado.data == "newLoginCliente"){
+
+            database.query(`
+                select * from public.produtos where status = 'true'
+            `, function(erro, produtos){
+
+                if(erro){
+
+                    res.send({
+                        codigo: 400,
+                        message: erro.message
+                    })
+                }
+                else{
+
+                    res.send({
+                        codigo: 200,
+                        produtos: produtos.rows
+                    })
+                }
+            })
+
+        }
+        else{
+            
+            res.send({
+                codigo:400,
+                message: "Token inválido, leia novamente o QR code."
             })
         }
     })

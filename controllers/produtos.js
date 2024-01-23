@@ -105,7 +105,7 @@ produtos.get("/produtoid/produtos/:token/:id_produto", function (req, res) {
                 message: "Erro ao validar token para carregar produtos"
             })
         }
-        else if (token_valido.data == "newLoginCasa") {
+        else if (token_valido.data == "newLoginCasa" || token_valido.data == "newLoginCliente") {
 
             database.query(`
                 select * from public.produtos where id_produto = ${req.params.id_produto}

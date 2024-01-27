@@ -8,7 +8,7 @@ app.use(cors())
 
 //body-parser
 const bodyParser = require("body-parser")
-app.use(bodyParser.json())
+app.use(bodyParser.json({limit: '10mb'}))
 
 //porta rodando o servidor
 const porta = process.env.PORT || process.env.PORTA_DEV

@@ -43,7 +43,7 @@ categorias.post("/criar/categoria/:tokenJWT", function (req, res) {
             })
         }
     })
-}) 
+})
 
 categorias.get("/all/categorias/:token", function (req, res) {
 
@@ -75,6 +75,7 @@ categorias.get("/all/categorias/:token", function (req, res) {
             })
         }
         else {
+
             res.send({
                 message: "Token Inválido para carregar categorias",
                 codigo: 400
@@ -93,7 +94,7 @@ categorias.get("/all/categorias/ativas/:token", function (req, res) {
                 message: "Erro ao validar token para carregar categorias"
             })
         }
-        else if (token_valido.data == "newLoginCasa") {
+        else if (token_valido.data == "newLoginCasa" || token_valido.data == "newLoginCliente") {
 
             database.query(`
                 select * from public.categorias where ativo = 'true'
@@ -113,6 +114,7 @@ categorias.get("/all/categorias/ativas/:token", function (req, res) {
             })
         }
         else {
+ 
             res.send({
                 message: "Token Inválido para carregar categorias",
                 codigo: 400

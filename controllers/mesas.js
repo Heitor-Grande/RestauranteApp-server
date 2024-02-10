@@ -173,5 +173,51 @@ mesas.put("/alterar/status/:tokenJWT/:id_mesa", function (req, res) {
     })
 })
 
+//carrega total da mesa para cliente
+mesas.get("/total/:id_mesa/:token", function (req, res) {
+
+    verificaJWT(req.params.token, function (erro, token_validado) {
+        console.log(token_validado)
+        if (erro) {
+
+            res.send({
+                codigo: 400,
+                message: erro.message
+            })
+        }
+        else if (token_validado.data == "newLoginCliente") {
+
+            database.query(`
+            select sum(total) from public.pedido_detalhe pd
+            JOIN public.pedido_cabecalho pc on pc.id_pedido = pd.id_pedido
+            where pc.mesa = ${req.params.id_mesa}
+            `, function(erro, total){
+
+                if(erro){
+
+                    res.send({
+                        codigo: 400,
+                        message: erro.message
+                    })
+                }
+                else{
+
+                    res.send({
+                        codigo: 200,
+                        total: total.rows
+                    })
+                }
+            })
+        }
+        else {
+
+            res.send({
+                codigo: 400,
+                message: "Token inválido"
+            })
+        }
+    })
+})
+
 module.exports = mesas
 

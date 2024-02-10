@@ -156,8 +156,11 @@ pedidos.get("/carregar/pedidos/:id_mesa/:token", function (req, res) {
         else if (token_decodificado.data == "newLoginCliente") {
 
             database.query(`
-                select pc.* from public.pedido_cabecalho pc 
-                where pc.mesa = ${req.params.id_mesa} and pc.limpou_mesa = 0
+            SELECT pc.id_pedido, pc.mesa, pc.limpou_mesa, pc.cliente, pc.status, SUM(pd.total) AS soma_pedido 
+            FROM public.pedido_cabecalho pc 
+            JOIN public.pedido_detalhe pd ON pd.id_pedido = pc.id_pedido 
+            WHERE pc.mesa = ${req.params.id_mesa} AND pc.limpou_mesa = 0
+            GROUP BY pc.id_pedido, pc.mesa, pc.limpou_mesa;
             `, function (erro, pedidos) {
 
                 if (erro) {
@@ -340,6 +343,50 @@ pedidos.put("/atualizar/status/:id_pedido/:token/:mesa", function (req, res) {
 
             res.send({
                 message: "Token para pedir inválido",
+                codigo: 400
+            })
+        }
+    })
+})
+
+//carrega pedidos com status X - apenas para cozinha
+pedidos.get("/all/pedidos/pendentes/:token/:status", function (req, res) {
+
+    verificaJWT(req.params.token, function (erro, token_decodificado) {
+
+        if (erro) {
+
+            res.send({
+                codigo: 400,
+                message: erro.message
+            })
+        }
+        else if (token_decodificado.data == "newLoginCasa") {
+            database.query(`
+            select pc.*, pd.* from public.pedido_cabecalho pc
+            JOIN public.pedido_detalhe pd on pd.id_pedido = pc.id_pedido
+            where pc.status = '${req.params.status}'
+            `, function (erro, pedidos_pendentes) {
+                if (erro) {
+
+                    res.send({
+                        codigo: 400,
+                        message: erro.message
+                    })
+                }
+                else {
+
+                    res.send({
+                        codigo: 200,
+                        pedidos: pedidos_pendentes.rows
+                    })
+                }
+            })
+        }
+        else {
+
+            res.send({
+                message: "Token inválido",
                 codigo: 400
             })
         }

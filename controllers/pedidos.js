@@ -189,7 +189,7 @@ pedidos.get("/carregar/pedidos/:id_mesa/:token", function (req, res) {
     })
 })
 
-//carrega detalhes do pedido
+//carrega detalhes do pedido cliente e cozinha
 pedidos.get("/carregar/detalhes/:id_pedido/:token", function (req, res) {
 
     verificaJWT(req.params.token, function (erro, token_decodificado) {
@@ -201,7 +201,7 @@ pedidos.get("/carregar/detalhes/:id_pedido/:token", function (req, res) {
                 codigo: 400
             })
         }
-        else if (token_decodificado.data == "newLoginCliente") {
+        else if (token_decodificado.data == "newLoginCliente" || token_decodificado.data == "newLoginCasa") {
 
             database.query(`
                 select * from public.pedido_detalhe pc 
@@ -365,7 +365,7 @@ pedidos.get("/all/pedidos/pendentes/:token/:status", function (req, res) {
             database.query(`
             select pc.*, pd.* from public.pedido_cabecalho pc
             JOIN public.pedido_detalhe pd on pd.id_pedido = pc.id_pedido
-            where pc.status = '${req.params.status}'
+            where pc.status = '${req.params.status}' and pc.limpou_mesa = 0
             `, function (erro, pedidos_pendentes) {
                 if (erro) {
 
@@ -392,4 +392,50 @@ pedidos.get("/all/pedidos/pendentes/:token/:status", function (req, res) {
         }
     })
 })
+
+//atualiza status de pedidos
+pedidos.put("/att/pedidos/stt/:token/:status/:id_pedido", function (req, res) {
+
+    verificaJWT(req.params.token, function (erro, token_decodificado) {
+
+        if (erro) {
+
+            res.send({
+                codigo: 400,
+                message: erro.message
+            })
+        }
+        else if (token_decodificado.data == "newLoginCasa") {
+
+            database.query(`
+            update public.pedido_cabecalho
+            set status = '${req.params.status}'
+            where id_pedido = ${req.params.id_pedido}
+            `, function (erro) {
+                if (erro) {
+
+                    res.send({
+                        codigo: 400,
+                        message: erro.message
+                    })
+                }
+                else {
+
+                    res.send({
+                        codigo: 200,
+                        message: `Pedido atualizado para: ${req.params.status}`
+                    })
+                }
+            })
+        }
+        else {
+
+            res.send({
+                message: "Token inválido",
+                codigo: 400
+            })
+        }
+    })
+})
+
 module.exports = pedidos

@@ -173,11 +173,11 @@ mesas.put("/alterar/status/:tokenJWT/:id_mesa", function (req, res) {
     })
 })
 
-//carrega total da mesa para cliente
+//carrega total da mesa para cliente e cozinha
 mesas.get("/total/:id_mesa/:token", function (req, res) {
 
     verificaJWT(req.params.token, function (erro, token_validado) {
-        console.log(token_validado)
+        
         if (erro) {
 
             res.send({
@@ -185,22 +185,22 @@ mesas.get("/total/:id_mesa/:token", function (req, res) {
                 message: erro.message
             })
         }
-        else if (token_validado.data == "newLoginCliente") {
+        else if (token_validado.data == "newLoginCliente" || token_validado.data == "newLoginCasa") {
 
             database.query(`
-            select sum(total) from public.pedido_detalhe pd
+            select sum(pd.total) from public.pedido_detalhe pd
             JOIN public.pedido_cabecalho pc on pc.id_pedido = pd.id_pedido
-            where pc.mesa = ${req.params.id_mesa}
-            `, function(erro, total){
+            where pc.mesa = ${req.params.id_mesa} and limpou_mesa = 0
+            `, function (erro, total) {
 
-                if(erro){
+                if (erro) {
 
                     res.send({
                         codigo: 400,
                         message: erro.message
                     })
                 }
-                else{
+                else {
 
                     res.send({
                         codigo: 200,
@@ -219,5 +219,142 @@ mesas.get("/total/:id_mesa/:token", function (req, res) {
     })
 })
 
+//limpa mesa - cozinha
+mesas.put('/limpa/mesa/:id_mesa/:token', function (req, res) {
+
+    verificaJWT(req.params.token, function (erro, token_validado) {
+
+        if (erro) {
+
+            res.send({
+                codigo: 400,
+                message: erro.message
+            })
+        }
+        else if (token_validado.data == "newLoginCasa") {
+
+            database.query(`
+            update public.pedido_cabecalho set limpou_mesa = 1 where mesa = ${req.params.id_mesa}
+            `, function (erro) {
+
+                if (erro) {
+
+                    res.send({
+                        codigo: 400,
+                        message: erro.message
+                    })
+                }
+                else {
+
+                    res.send({
+                        codigo: 200,
+                        message: "Sucesso ao limpar mesa"
+                    })
+                }
+            })
+        }
+        else {
+
+            res.send({
+                codigo: 400,
+                message: "Token inválido"
+            })
+        }
+    })
+})
+
+//carrega historico da mesa
+mesas.get("/load/mesa/pedidos/:token/:id_mesa", function (req, res) {
+
+    verificaJWT(req.params.token, function (erro, token_validado) {
+
+        if (erro) {
+
+            res.send({
+                codigo: 400,
+                message: erro.message
+            })
+        }
+        else if (token_validado.data == "newLoginCasa") {
+
+            database.query(`
+            select pc.*, sum(pd.total) from public.pedido_cabecalho pc 
+            JOIN public.pedido_detalhe pd on pd.id_pedido = pc.id_pedido
+            where pc.mesa = ${req.params.id_mesa} and limpou_mesa = 1
+            group by pc.id_pedido, pc.mesa, pc.status, pc.cliente, pc.limpou_mesa
+            `, function (erro, pedidos) {
+
+                if (erro) {
+
+                    res.send({
+                        codigo: 400,
+                        message: erro.message
+                    })
+                }
+                else {
+
+                    res.send({
+                        codigo: 200,
+                        pedidos: pedidos.rows
+                    })
+                }
+            })
+        }
+        else {
+
+            res.send({
+                codigo: 400,
+                message: "Token inválido"
+            })
+        }
+    })
+})
+
+//carrega pedidos da mesa concluidos para levar na mesa
+mesas.get("/carregar/mesa/pedidosConcluidos/:token/:id_mesa", function (req, res) {
+
+    verificaJWT(req.params.token, function (erro, token_validado) {
+
+        if (erro) {
+
+            res.send({
+                codigo: 400,
+                message: erro.message
+            })
+        }
+        else if (token_validado.data == "newLoginCasa") {
+
+            database.query(`
+            select pc.*, sum(pd.total) from public.pedido_cabecalho pc 
+            JOIN public.pedido_detalhe pd on pd.id_pedido = pc.id_pedido
+            where pc.mesa = ${req.params.id_mesa} and limpou_mesa = 0
+            group by pc.id_pedido, pc.mesa, pc.status, pc.cliente, pc.limpou_mesa
+            `, function (erro, pedidos) {
+
+                if (erro) {
+
+                    res.send({
+                        codigo: 400,
+                        message: erro.message
+                    })
+                }
+                else {
+
+                    res.send({
+                        codigo: 200,
+                        pedidos: pedidos.rows
+                    })
+                }
+            })
+        }
+        else {
+
+            res.send({
+                codigo: 400,
+                message: "Token inválido"
+            })
+        }
+    })
+})
 module.exports = mesas
 

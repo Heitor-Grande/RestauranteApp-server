@@ -16,8 +16,8 @@ mesas.post("/criar/mesa/:tokenJWT", function (req, res) {
         else if (token_validado.data == "newLoginCasa") {
 
             database.query(`
-            insert into public.mesas (total, status)
-            values('0', 'true')
+            insert into public.mesas (total, status, chamado)
+            values('0', 'true', 'false')
             `, function (erro) {
                 if (erro) {
 
@@ -177,7 +177,7 @@ mesas.put("/alterar/status/:tokenJWT/:id_mesa", function (req, res) {
 mesas.get("/total/:id_mesa/:token", function (req, res) {
 
     verificaJWT(req.params.token, function (erro, token_validado) {
-        
+
         if (erro) {
 
             res.send({
@@ -344,6 +344,88 @@ mesas.get("/carregar/mesa/pedidosConcluidos/:token/:id_mesa", function (req, res
                         codigo: 200,
                         pedidos: pedidos.rows
                     })
+                }
+            })
+        }
+        else {
+
+            res.send({
+                codigo: 400,
+                message: "Token inválido"
+            })
+        }
+    })
+})
+
+//verifica se mesa está aberta para cliente entrar usando qrcode
+mesas.get("/validar/mesa/:id_mesa", function (req, res) {
+
+    database.query(`select * from mesas where id_mesa = ${req.params.id_mesa}`, function (erro, mesa) {
+
+        if (erro) {
+
+            res.send({
+                message: erro.message,
+                codigo: 400
+            })
+        }
+        else if (mesa.rows[0].status == true) {
+
+            res.send({
+                codigo: 200
+            })
+        }
+        else {
+
+            res.send({
+                message: "Mesa fechada, chame um garçom.",
+                codigo: 400
+            })
+        }
+    })
+})
+
+mesas.put("/chamado/:status_chamado/:token/:id_mesa", function (req, res) {
+
+    verificaJWT(req.params.token, function (erro, token_validado) {
+
+        if (erro) {
+
+            res.send({
+                codigo: 400,
+                message: erro.message
+            })
+        }
+        else if (token_validado.data == "newLoginCasa" || token_validado.data == "newLoginCliente") {
+
+            database.query(`
+            update public.mesas set chamado = '${req.params.status_chamado}' where id_mesa = ${req.params.id_mesa}
+            `, function (erro) {
+
+                if (erro) {
+
+                    res.send({
+                        codigo: 400,
+                        message: erro.message
+                    })
+                }
+                else {
+
+                    if (req.params.status_chamado == "false") {
+
+                        res.send({
+                            codigo: 200,
+                            message: "Chamado atendido"
+                        })
+                    }
+                    else {
+
+                        res.send({
+                            codigo: 200,
+                            message: "Chamado solicitado"
+                        })
+                    }
+
                 }
             })
         }

@@ -243,7 +243,7 @@ produtos.get("/carrega/produtos/by/categoria/:token/:id_categoria", function(req
         else if(token_validado.data == "newLoginCasa" || token_validado.data == "newLoginCliente"){
 
             database.query(`
-                select * from public.produtos where status = 'true'
+                select * from public.produtos where status = 'true' and id_categoria = ${req.params.id_categoria}
             `, function(erro, produtos){
 
                 if(erro){

@@ -3,7 +3,7 @@ const categorias = express.Router()
 const { verificaJWT } = require("../functions/jwt")
 const database = require("../database/dbConnection")
 
-categorias.post("/criar/categoria/:tokenJWT", function (req, res) {
+categorias.post("/criar/categoria/:tokenJWT/:id_cliente", function (req, res) {
 
     verificaJWT(req.params.tokenJWT, function (erro, token_validado) {
         if (erro) {
@@ -16,8 +16,8 @@ categorias.post("/criar/categoria/:tokenJWT", function (req, res) {
         else if (token_validado.data == "newLoginCasa") {
 
             database.query(`
-            insert into public.categorias (categoria, ativo)
-            values('${req.body.categoria}', '${req.body.ativo}')
+            insert into public.categorias (categoria, ativo, id_cliente)
+            values('${req.body.categoria}', '${req.body.ativo}', ${req.params.id_cliente})
             `, function (erro) {
                 if (erro) {
 
@@ -45,7 +45,7 @@ categorias.post("/criar/categoria/:tokenJWT", function (req, res) {
     })
 })
 
-categorias.get("/all/categorias/:token", function (req, res) {
+categorias.get("/all/categorias/:token/:id_cliente", function (req, res) {
 
     verificaJWT(req.params.token, function (erro, token_valido) {
 
@@ -58,7 +58,7 @@ categorias.get("/all/categorias/:token", function (req, res) {
         else if (token_valido.data == "newLoginCasa") {
 
             database.query(`
-                select * from public.categorias
+                select * from public.categorias where id_cliente = ${req.params.id_cliente}
             `, function (erro, categorias) {
                 if (erro) {
                     res.send({
@@ -84,7 +84,7 @@ categorias.get("/all/categorias/:token", function (req, res) {
     })
 })
 
-categorias.get("/all/categorias/ativas/:token", function (req, res) {
+categorias.get("/all/categorias/ativas/:token/:id_cliente", function (req, res) {
 
     verificaJWT(req.params.token, function (erro, token_valido) {
 
@@ -97,7 +97,7 @@ categorias.get("/all/categorias/ativas/:token", function (req, res) {
         else if (token_valido.data == "newLoginCasa" || token_valido.data == "newLoginCliente") {
 
             database.query(`
-                select * from public.categorias where ativo = 'true'
+                select * from public.categorias where ativo = 'true' and id_cliente = ${req.params.id_cliente}
             `, function (erro, categorias) {
                 if (erro) {
                     res.send({
@@ -123,7 +123,7 @@ categorias.get("/all/categorias/ativas/:token", function (req, res) {
     })
 })
 
-categorias.get("/categoriaid/categorias/:token/:id_categoria", function (req, res) {
+categorias.get("/categoriaid/categorias/:token/:id_categoria/:id_cliente", function (req, res) {
 
     verificaJWT(req.params.token, function (erro, token_valido) {
 
@@ -136,7 +136,7 @@ categorias.get("/categoriaid/categorias/:token/:id_categoria", function (req, re
         else if (token_valido.data == "newLoginCasa") {
 
             database.query(`
-                select * from public.categorias where id_categoria = ${req.params.id_categoria}
+                select * from public.categorias where id_categoria = ${req.params.id_categoria} and id_cliente = ${req.params.id_cliente}
             `, function (erro, categoria) {
                 if (erro) {
                     res.send({
@@ -161,7 +161,7 @@ categorias.get("/categoriaid/categorias/:token/:id_categoria", function (req, re
     })
 })
 
-categorias.put("/editar/categoria/:tokenJWT", function (req, res) {
+categorias.put("/editar/categoria/:tokenJWT/:id_cliente", function (req, res) {
 
     verificaJWT(req.params.tokenJWT, function (erro, token_validado) {
         if (erro) {
@@ -179,7 +179,7 @@ categorias.put("/editar/categoria/:tokenJWT", function (req, res) {
             categoria = '${req.body.categoria}', 
             ativo = '${req.body.ativo}'
             WHERE
-            id_categoria = ${req.body.id_categoria}
+            id_categoria = ${req.body.id_categoria} and id_cliente = ${req.params.id_cliente}
             `, function (erro) {
                 if (erro) {
 
@@ -206,7 +206,7 @@ categorias.put("/editar/categoria/:tokenJWT", function (req, res) {
     })
 })
 
-categorias.delete("/del/categoria/:token/:id_categoria", function (req, res) {
+categorias.delete("/del/categoria/:token/:id_categoria/:id_cliente", function (req, res) {
 
     verificaJWT(req.params.token, function (erro, token_validado) {
         if (erro) {
@@ -221,7 +221,7 @@ categorias.delete("/del/categoria/:token/:id_categoria", function (req, res) {
             database.query(`
             DELETE from public.categorias 
             WHERE
-            id_categoria = ${req.params.id_categoria}
+            id_categoria = ${req.params.id_categoria} and id_cliente = ${req.params.id_cliente}
             `, function (erro) {
                 if (erro) {
 

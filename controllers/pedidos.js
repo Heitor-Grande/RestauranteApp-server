@@ -4,7 +4,7 @@ const database = require("../database/dbConnection")
 const pedidos = express.Router()
 
 //cria pedio cabecalho e/ou pedido detalhe
-pedidos.post("/criar/pedido/:id_mesa/:token/:id_produto", function (req, res) {
+pedidos.post("/criar/pedido/:id_mesa/:token/:id_produto/:id_cliente", function (req, res) {
 
     verificaJWT(req.params.token, function (erro, token_decodificado) {
 
@@ -18,7 +18,7 @@ pedidos.post("/criar/pedido/:id_mesa/:token/:id_produto", function (req, res) {
         else if (token_decodificado.data == "newLoginCliente") {
 
             database.query(`
-                select * from public.pedido_cabecalho where mesa = ${req.params.id_mesa} and cliente = '${req.body.cliente}' and limpou_mesa = 0
+                select * from public.pedido_cabecalho where mesa = ${req.params.id_mesa} and cliente = '${req.body.cliente}' and limpou_mesa = 0 and id_cliente = ${req.params.id_cliente}
             `, function (erro, pedido) {
 
                 if (erro) {
@@ -143,7 +143,7 @@ pedidos.post("/criar/pedido/:id_mesa/:token/:id_produto", function (req, res) {
 })
 
 //carrega o cabecalho d pedido
-pedidos.get("/carregar/pedidos/:id_mesa/:token", function (req, res) {
+pedidos.get("/carregar/pedidos/:id_mesa/:token/:id_cliente", function (req, res) {
 
     verificaJWT(req.params.token, function (erro, token_decodificado) {
 
@@ -160,7 +160,7 @@ pedidos.get("/carregar/pedidos/:id_mesa/:token", function (req, res) {
             SELECT pc.id_pedido, pc.mesa, pc.limpou_mesa, pc.cliente, pc.status, SUM(pd.total) AS soma_pedido 
             FROM public.pedido_cabecalho pc 
             JOIN public.pedido_detalhe pd ON pd.id_pedido = pc.id_pedido 
-            WHERE pc.mesa = ${req.params.id_mesa} AND pc.limpou_mesa = 0
+            WHERE pc.mesa = ${req.params.id_mesa} AND pc.limpou_mesa = 0 and id_cliente = ${req.params.id_cliente}
             GROUP BY pc.id_pedido, pc.mesa, pc.limpou_mesa
             `, function (erro, pedidos) {
 
@@ -191,7 +191,7 @@ pedidos.get("/carregar/pedidos/:id_mesa/:token", function (req, res) {
 })
 
 //carrega detalhes do pedido cliente e cozinha
-pedidos.get("/carregar/detalhes/:id_pedido/:token", function (req, res) {
+pedidos.get("/carregar/detalhes/:id_pedido/:token/:id_cliente", function (req, res) {
 
     verificaJWT(req.params.token, function (erro, token_decodificado) {
 
@@ -206,7 +206,7 @@ pedidos.get("/carregar/detalhes/:id_pedido/:token", function (req, res) {
 
             database.query(`
                 select * from public.pedido_detalhe pc 
-                where id_pedido  = ${req.params.id_pedido}
+                where id_pedido  = ${req.params.id_pedido} and id_cliente = ${req.params.id_cliente}
             `, function (erro, detalhes) {
 
                 if (erro) {
@@ -236,7 +236,7 @@ pedidos.get("/carregar/detalhes/:id_pedido/:token", function (req, res) {
 })
 
 //deleta pedido detalhe
-pedidos.get("/deleta/detalhe/:id_pedido_detalhe/:token", function (req, res) {
+pedidos.get("/deleta/detalhe/:id_pedido_detalhe/:token/:id_cliente", function (req, res) {
 
     verificaJWT(req.params.token, function (erro, token_decodificado) {
 
@@ -253,7 +253,7 @@ pedidos.get("/deleta/detalhe/:id_pedido_detalhe/:token", function (req, res) {
             database.query(`
                 select pc.* from public.pedido_cabecalho pc
                 JOIN pedido_detalhe pd on pd.id_pedido_detalhe = ${req.params.id_pedido_detalhe}
-                where pc.id_pedido = pd.id_pedido
+                where pc.id_pedido = pd.id_pedido and pc.id_cliente = ${req.params.id_cliente}
             `, function (erro, pedido) {
 
                 if (erro) {
@@ -267,7 +267,7 @@ pedidos.get("/deleta/detalhe/:id_pedido_detalhe/:token", function (req, res) {
 
                     database.query(`
                     delete from public.pedido_detalhe
-                    where id_pedido_detalhe = ${req.params.id_pedido_detalhe}
+                    where id_pedido_detalhe = ${req.params.id_pedido_detalhe} and id_cliente = ${req.params.id_cliente}
                 `, function (erro) {
 
                         if (erro) {
@@ -282,7 +282,7 @@ pedidos.get("/deleta/detalhe/:id_pedido_detalhe/:token", function (req, res) {
                             database.query(`
                             select pd.* from public.pedido_cabecalho pc
                             JOIN pedido_detalhe pd on pd.id_pedido = ${pedido.rows[0].id_pedido}
-                            where pc.id_pedido = pd.id_pedido
+                            where pc.id_pedido = pd.id_pedido and pd.id_cliente = ${req.params.id_cliente}
                             `, function (erro, pedidos_detalhes) {
 
                                 if (erro) {
@@ -295,7 +295,7 @@ pedidos.get("/deleta/detalhe/:id_pedido_detalhe/:token", function (req, res) {
                                 else if (pedidos_detalhes.rows.length == 0) {
 
                                     database.query(`
-                                    delete from public.pedido_cabecalho where id_pedido = ${pedido.rows[0].id_pedido}
+                                    delete from public.pedido_cabecalho where id_pedido = ${pedido.rows[0].id_pedido} and id_cliente = ${req.params.id_cliente}
                                     `, function (erro) {
 
                                         if (erro) {
@@ -345,7 +345,7 @@ pedidos.get("/deleta/detalhe/:id_pedido_detalhe/:token", function (req, res) {
 })
 
 //envia pedido para cozinha MONTANDO > "PENDENTE"
-pedidos.put("/atualizar/status/:id_pedido/:token/:mesa", function (req, res) {
+pedidos.put("/atualizar/status/:id_pedido/:token/:mesa/:id_cliente", function (req, res) {
 
     verificaJWT(req.params.token, function (erro, token_decodificado) {
 
@@ -359,7 +359,7 @@ pedidos.put("/atualizar/status/:id_pedido/:token/:mesa", function (req, res) {
         else if (token_decodificado.data == "newLoginCliente") {
 
             database.query(`
-            update public.pedido_cabecalho set status = 'PENDENTE'
+            update public.pedido_cabecalho set status = 'PENDENTE' where id_cliente = ${req.params.id_cliente}
             `, function (erro) {
 
                 if (erro) {
@@ -390,7 +390,7 @@ pedidos.put("/atualizar/status/:id_pedido/:token/:mesa", function (req, res) {
 })
 
 //carrega pedidos com status X - apenas para cozinha
-pedidos.get("/all/pedidos/pendentes/:token/:status", function (req, res) {
+pedidos.get("/all/pedidos/pendentes/:token/:status/:id_cliente", function (req, res) {
 
     verificaJWT(req.params.token, function (erro, token_decodificado) {
 
@@ -404,7 +404,7 @@ pedidos.get("/all/pedidos/pendentes/:token/:status", function (req, res) {
         else if (token_decodificado.data == "newLoginCasa") {
             database.query(`
             select * from public.pedido_cabecalho
-            where status like '${req.params.status}' and limpou_mesa = 0
+            where status like '${req.params.status}' and limpou_mesa = 0 and id_cliente = ${req.params.id_cliente}
             `, function (erro, pedidos_pendentes) {
                 if (erro) {
 
@@ -433,7 +433,7 @@ pedidos.get("/all/pedidos/pendentes/:token/:status", function (req, res) {
 })
 
 //atualiza status de pedidos
-pedidos.put("/att/pedidos/stt/:token/:status/:id_pedido", function (req, res) {
+pedidos.put("/att/pedidos/stt/:token/:status/:id_pedido/:id_cliente", function (req, res) {
 
     verificaJWT(req.params.token, function (erro, token_decodificado) {
 
@@ -449,7 +449,7 @@ pedidos.put("/att/pedidos/stt/:token/:status/:id_pedido", function (req, res) {
             database.query(`
             update public.pedido_cabecalho
             set status = '${req.params.status}'
-            where id_pedido = ${req.params.id_pedido}
+            where id_pedido = ${req.params.id_pedido} and id_cliente = ${req.params.id_cliente}
             `, function (erro) {
                 if (erro) {
 

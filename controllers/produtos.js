@@ -3,7 +3,7 @@ const produtos = express.Router()
 const { verificaJWT } = require("../functions/jwt")
 const database = require("../database/dbConnection")
 
-produtos.post("/criar/produto/:tokenJWT", function (req, res) {
+produtos.post("/criar/produto/:tokenJWT/:id_cliente", function (req, res) {
 
     verificaJWT(req.params.tokenJWT, function (erro, token_validado) {
         if (erro) {
@@ -25,8 +25,8 @@ produtos.post("/criar/produto/:tokenJWT", function (req, res) {
             } = req.body
 
             database.query(`
-            insert into public.produtos (nome, preco, descricao, status, img, id_categoria)
-            values('${nome}', '${preco}', '${descricao}', '${status}', '${img}', ${id_categoria})
+            insert into public.produtos (nome, preco, descricao, status, img, id_categoria, id_cliente)
+            values('${nome}', '${preco}', '${descricao}', '${status}', '${img}', ${id_categoria}, ${req.params.id_cliente})
             `, function (erro) {
                 if (erro) {
 
@@ -54,7 +54,7 @@ produtos.post("/criar/produto/:tokenJWT", function (req, res) {
     })
 })
 
-produtos.get("/all/produtos/:token", function (req, res) {
+produtos.get("/all/produtos/:token/:id_cliente", function (req, res) {
 
     verificaJWT(req.params.token, function (erro, token_valido) {
 
@@ -68,7 +68,7 @@ produtos.get("/all/produtos/:token", function (req, res) {
         else if (token_valido.data == "newLoginCasa") {
 
             database.query(`
-                select * from public.produtos
+                select * from public.produtos where id_cliente = ${req.params.id_cliente}
             `, function (erro, produtos) {
                 if (erro) {
 
@@ -95,7 +95,7 @@ produtos.get("/all/produtos/:token", function (req, res) {
     })
 })
 
-produtos.get("/produtoid/produtos/:token/:id_produto", function (req, res) {
+produtos.get("/produtoid/produtos/:token/:id_produto/:id_cliente", function (req, res) {
 
     verificaJWT(req.params.token, function (erro, token_valido) {
 
@@ -108,7 +108,7 @@ produtos.get("/produtoid/produtos/:token/:id_produto", function (req, res) {
         else if (token_valido.data == "newLoginCasa" || token_valido.data == "newLoginCliente") {
 
             database.query(`
-                select * from public.produtos where id_produto = ${req.params.id_produto}
+                select * from public.produtos where id_produto = ${req.params.id_produto} and id_cliente = ${req.params.id_cliente}
             `, function (erro, produto) {
                 if (erro) {
 
@@ -135,7 +135,7 @@ produtos.get("/produtoid/produtos/:token/:id_produto", function (req, res) {
     })
 })
 
-produtos.put("/editar/produto/:tokenJWT", function (req, res) {
+produtos.put("/editar/produto/:tokenJWT/:id_cliente", function (req, res) {
 
     verificaJWT(req.params.tokenJWT, function (erro, token_validado) {
         if (erro) {
@@ -160,7 +160,7 @@ produtos.put("/editar/produto/:tokenJWT", function (req, res) {
             database.query(`
             UPDATE public.produtos
             SET preco='${preco}', status='${status}', img='${img}', nome='${nome}', descricao='${descricao}', id_categoria=${id_categoria}
-            WHERE id_produto = ${id_produto}
+            WHERE id_produto = ${id_produto} and id_cliente = ${req.params.id_cliente}
             `, function (erro) {
                 if (erro) {
 
@@ -187,7 +187,7 @@ produtos.put("/editar/produto/:tokenJWT", function (req, res) {
     })
 })
 
-produtos.delete("/del/produto/:token/:id_produto", function (req, res) {
+produtos.delete("/del/produto/:token/:id_produto/:id_cliente", function (req, res) {
 
     verificaJWT(req.params.token, function (erro, token_validado) {
         if (erro) {
@@ -202,7 +202,7 @@ produtos.delete("/del/produto/:token/:id_produto", function (req, res) {
             database.query(`
             DELETE from public.produtos 
             WHERE
-            id_produto = ${req.params.id_produto}
+            id_produto = ${req.params.id_produto} and id_cliente = ${req.params.id_cliente}
             `, function (erro) {
                 if (erro) {
 
@@ -229,7 +229,7 @@ produtos.delete("/del/produto/:token/:id_produto", function (req, res) {
     })
 })
 
-produtos.get("/carrega/produtos/by/categoria/:token/:id_categoria", function(req, res){
+produtos.get("/carrega/produtos/by/categoria/:token/:id_categoria/:id_cliente", function(req, res){
 
     verificaJWT(req.params.token, function(erro, token_validado){
 
@@ -243,7 +243,7 @@ produtos.get("/carrega/produtos/by/categoria/:token/:id_categoria", function(req
         else if(token_validado.data == "newLoginCasa" || token_validado.data == "newLoginCliente"){
 
             database.query(`
-                select * from public.produtos where status = 'true' and id_categoria = ${req.params.id_categoria}
+                select * from public.produtos where status = 'true' and id_categoria = ${req.params.id_categoria} and id_cliente = ${req.params.id_cliente}
             `, function(erro, produtos){
 
                 if(erro){

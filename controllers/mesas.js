@@ -3,7 +3,7 @@ const mesas = express.Router()
 const { verificaJWT } = require("../functions/jwt")
 const database = require("../database/dbConnection")
 
-mesas.post("/criar/mesa/:tokenJWT", function (req, res) {
+mesas.post("/criar/mesa/:tokenJWT/:id_cliente", function (req, res) {
 
     verificaJWT(req.params.tokenJWT, function (erro, token_validado) {
         if (erro) {
@@ -16,8 +16,8 @@ mesas.post("/criar/mesa/:tokenJWT", function (req, res) {
         else if (token_validado.data == "newLoginCasa") {
 
             database.query(`
-            insert into public.mesas (total, status, chamado)
-            values('0', 'true', 'false')
+            insert into public.mesas (total, status, chamado, id_cliente)
+            values('0', 'true', 'false', ${req.params.id_cliente})
             `, function (erro) {
                 if (erro) {
 
@@ -45,7 +45,7 @@ mesas.post("/criar/mesa/:tokenJWT", function (req, res) {
     })
 })
 
-mesas.get("/selecionar/mesas/:tokenJWT", function (req, res) {
+mesas.get("/selecionar/mesas/:tokenJWT/:id_cliente", function (req, res) {
 
     verificaJWT(req.params.tokenJWT, function (erro, token_validado) {
 
@@ -59,7 +59,7 @@ mesas.get("/selecionar/mesas/:tokenJWT", function (req, res) {
         else if (token_validado.data == "newLoginCasa") {
 
             database.query(`
-                select * from public.mesas order by id_mesa asc
+                select * from public.mesas where id_cliente = ${req.params.id_cliente} order by id_mesa asc
             `, function (erro, mesas) {
                 if (erro) {
 
@@ -87,7 +87,7 @@ mesas.get("/selecionar/mesas/:tokenJWT", function (req, res) {
     })
 })
 
-mesas.get("/selecionar/mesa/:tokenJWT/:id_mesa", function (req, res) {
+mesas.get("/selecionar/mesa/:tokenJWT/:id_mesa/:id_cliente", function (req, res) {
 
     verificaJWT(req.params.tokenJWT, function (erro, token_validado) {
 
@@ -101,7 +101,7 @@ mesas.get("/selecionar/mesa/:tokenJWT/:id_mesa", function (req, res) {
         else if (token_validado.data == "newLoginCasa") {
 
             database.query(`
-                select * from public.mesas where id_mesa = ${req.params.id_mesa} order by id_mesa asc 
+                select * from public.mesas where id_mesa = ${req.params.id_mesa} and id_cliente = ${req.params.id_cliente} order by id_mesa asc 
             `, function (erro, mesas) {
                 if (erro) {
 
@@ -129,7 +129,7 @@ mesas.get("/selecionar/mesa/:tokenJWT/:id_mesa", function (req, res) {
     })
 })
 
-mesas.put("/alterar/status/:tokenJWT/:id_mesa", function (req, res) {
+mesas.put("/alterar/status/:tokenJWT/:id_mesa/:id_cliente", function (req, res) {
 
     verificaJWT(req.params.tokenJWT, function (erro, token_validado) {
 
@@ -145,7 +145,7 @@ mesas.put("/alterar/status/:tokenJWT/:id_mesa", function (req, res) {
             const status = req.body.status
 
             database.query(`
-               update mesas set status = '${status}' where id_mesa = ${req.params.id_mesa}
+               update mesas set status = '${status}' where id_mesa = ${req.params.id_mesa} and id_cliente = ${req.params.id_cliente}
             `, function (erro) {
                 if (erro) {
 
@@ -174,7 +174,7 @@ mesas.put("/alterar/status/:tokenJWT/:id_mesa", function (req, res) {
 })
 
 //carrega total da mesa para cliente e cozinha
-mesas.get("/total/:id_mesa/:token", function (req, res) {
+mesas.get("/total/:id_mesa/:token/:id_cliente", function (req, res) {
 
     verificaJWT(req.params.token, function (erro, token_validado) {
 
@@ -190,7 +190,7 @@ mesas.get("/total/:id_mesa/:token", function (req, res) {
             database.query(`
             select sum(pd.total) from public.pedido_detalhe pd
             JOIN public.pedido_cabecalho pc on pc.id_pedido = pd.id_pedido
-            where pc.mesa = ${req.params.id_mesa} and limpou_mesa = 0
+            where pc.mesa = ${req.params.id_mesa} and limpou_mesa = 0 and pd.id_cliente = ${req.params.id_cliente}
             `, function (erro, total) {
 
                 if (erro) {
@@ -220,7 +220,7 @@ mesas.get("/total/:id_mesa/:token", function (req, res) {
 })
 
 //limpa mesa - cozinha
-mesas.put('/limpa/mesa/:id_mesa/:token', function (req, res) {
+mesas.put('/limpa/mesa/:id_mesa/:token/:id_cliente', function (req, res) {
 
     verificaJWT(req.params.token, function (erro, token_validado) {
 
@@ -234,7 +234,7 @@ mesas.put('/limpa/mesa/:id_mesa/:token', function (req, res) {
         else if (token_validado.data == "newLoginCasa") {
 
             database.query(`
-            update public.pedido_cabecalho set limpou_mesa = 1 where mesa = ${req.params.id_mesa}
+            update public.pedido_cabecalho set limpou_mesa = 1 where mesa = ${req.params.id_mesa} and id_cliente = ${req.params.id_cliente}
             `, function (erro) {
 
                 if (erro) {
@@ -264,7 +264,7 @@ mesas.put('/limpa/mesa/:id_mesa/:token', function (req, res) {
 })
 
 //carrega historico da mesa
-mesas.get("/load/mesa/pedidos/:token/:id_mesa", function (req, res) {
+mesas.get("/load/mesa/pedidos/:token/:id_mesa/:id_cliente", function (req, res) {
 
     verificaJWT(req.params.token, function (erro, token_validado) {
 
@@ -280,7 +280,7 @@ mesas.get("/load/mesa/pedidos/:token/:id_mesa", function (req, res) {
             database.query(`
             select pc.*, sum(pd.total) from public.pedido_cabecalho pc 
             JOIN public.pedido_detalhe pd on pd.id_pedido = pc.id_pedido
-            where pc.mesa = ${req.params.id_mesa} and limpou_mesa = 1
+            where pc.mesa = ${req.params.id_mesa} and limpou_mesa = 1 and pd.id_cliente = ${req.params.id_cliente}
             group by pc.id_pedido, pc.mesa, pc.status, pc.cliente, pc.limpou_mesa
             `, function (erro, pedidos) {
 
@@ -311,7 +311,7 @@ mesas.get("/load/mesa/pedidos/:token/:id_mesa", function (req, res) {
 })
 
 //carrega pedidos da mesa concluidos para levar na mesa
-mesas.get("/carregar/mesa/pedidosConcluidos/:token/:id_mesa", function (req, res) {
+mesas.get("/carregar/mesa/pedidosConcluidos/:token/:id_mesa/:id_cliente", function (req, res) {
 
     verificaJWT(req.params.token, function (erro, token_validado) {
 
@@ -327,7 +327,7 @@ mesas.get("/carregar/mesa/pedidosConcluidos/:token/:id_mesa", function (req, res
             database.query(`
             select pc.*, sum(pd.total) from public.pedido_cabecalho pc 
             JOIN public.pedido_detalhe pd on pd.id_pedido = pc.id_pedido
-            where pc.mesa = ${req.params.id_mesa} and limpou_mesa = 0
+            where pc.mesa = ${req.params.id_mesa} and limpou_mesa = 0 and pc.id_cliente = ${req.params.id_cliente}
             group by pc.id_pedido, pc.mesa, pc.status, pc.cliente, pc.limpou_mesa
             `, function (erro, pedidos) {
 
@@ -358,7 +358,7 @@ mesas.get("/carregar/mesa/pedidosConcluidos/:token/:id_mesa", function (req, res
 })
 
 //verifica se mesa está aberta para cliente entrar usando qrcode
-mesas.get("/validar/mesa/:id_mesa", function (req, res) {
+mesas.get("/validar/mesa/:id_mesa/:id_cliente", function (req, res) {
 
     database.query(`select * from mesas where id_mesa = ${req.params.id_mesa}`, function (erro, mesa) {
 
@@ -385,7 +385,7 @@ mesas.get("/validar/mesa/:id_mesa", function (req, res) {
     })
 })
 
-mesas.put("/chamado/:status_chamado/:token/:id_mesa", function (req, res) {
+mesas.put("/chamado/:status_chamado/:token/:id_mesa/:id_cliente", function (req, res) {
 
     verificaJWT(req.params.token, function (erro, token_validado) {
 
@@ -399,7 +399,7 @@ mesas.put("/chamado/:status_chamado/:token/:id_mesa", function (req, res) {
         else if (token_validado.data == "newLoginCasa" || token_validado.data == "newLoginCliente") {
 
             database.query(`
-            update public.mesas set chamado = '${req.params.status_chamado}' where id_mesa = ${req.params.id_mesa}
+            update public.mesas set chamado = '${req.params.status_chamado}' where id_mesa = ${req.params.id_mesa} and id_cliente = ${req.params.id_cliente}
             `, function (erro) {
 
                 if (erro) {

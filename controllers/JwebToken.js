@@ -1,9 +1,10 @@
 const express = require("express")
 const criarJWT = express()
 const {gerarJWT, verificaJWT} = require("../functions/jwt")
+const VerificatokenAcesso = require("../functions/verificaTokenAcesso")
 
 //cria token para cliente
-criarJWT.get("/criar/jwt", function(req, res){
+criarJWT.get("/criar/jwt/:token_acesso", VerificatokenAcesso, function(req, res){
 
     gerarJWT("newLoginCliente", function(erro, token){
         
@@ -25,7 +26,7 @@ criarJWT.get("/criar/jwt", function(req, res){
 })
 
 //cria token para garçons, etc
-criarJWT.get("/criar/jwt/casa", function(req, res){
+criarJWT.get("/criar/jwt/casa/:token_acesso", VerificatokenAcesso, function(req, res){
 
     gerarJWT("newLoginCasa", function(erro, token){
         
@@ -46,7 +47,8 @@ criarJWT.get("/criar/jwt/casa", function(req, res){
     })
 })
 
-criarJWT.get("/validar/token/:token", function(req, res){
+
+criarJWT.get("/validar/token/:token/:token_acesso", VerificatokenAcesso, function(req, res){
     
     verificaJWT(req.params.token, function(erro, token_validado){
         if(erro){
@@ -58,9 +60,13 @@ criarJWT.get("/validar/token/:token", function(req, res){
         }
         else if(token_validado){
 
+            const dados = {
+                id_cliente: req.id_cliente,
+                token_validado: token_validado.data
+            }
             res.send({
                 codigo: 200,
-                infoToken: token_validado.data
+                infoToken: dados
             })
         }
     })

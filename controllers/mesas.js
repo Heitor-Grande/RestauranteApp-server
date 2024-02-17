@@ -204,7 +204,7 @@ mesas.get("/total/:id_mesa/:token/:id_cliente", function (req, res) {
             database.query(`
             select sum(pd.total) from public.pedido_detalhe pd
             JOIN public.pedido_cabecalho pc on pc.id_pedido = pd.id_pedido
-            where pc.mesa = ${req.params.id_mesa} and limpou_mesa = 0 and pd.id_cliente = ${req.params.id_cliente}
+            where pc.mesa = ${req.params.id_mesa} and limpou_mesa = 0 and pd.id_cliente = ${req.params.id_cliente} and pc.status = 'CONCLUIDO'
             `, function (erro, total) {
 
                 if (erro) {

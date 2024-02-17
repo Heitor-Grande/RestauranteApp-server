@@ -18,7 +18,7 @@ pedidos.post("/criar/pedido/:id_mesa/:token/:id_produto/:id_cliente", function (
         else if (token_decodificado.data == "newLoginCliente") {
 
             database.query(`
-                select * from public.pedido_cabecalho where mesa = ${req.params.id_mesa} and cliente = '${req.body.cliente}' and limpou_mesa = 0 and id_cliente = ${req.params.id_cliente}
+                select * from public.pedido_cabecalho where mesa = ${req.params.id_mesa} and cliente = '${req.body.cliente}' and limpou_mesa = 0 and id_cliente = ${req.params.id_cliente} and status = 'MONTANDO'
             `, function (erro, pedido) {
 
                 if (erro) {
@@ -29,7 +29,7 @@ pedidos.post("/criar/pedido/:id_mesa/:token/:id_produto/:id_cliente", function (
                     })
                 }
                 else if (pedido.rows.length == 1) {
-                    //ja existe um cabecalho, preciso adicionar um pedido detalhe
+                    //ja existe um cabecalho MONTANDO, preciso adicionar um pedido detalhe
 
                     database.query(`
                         select * from public.produtos where id_produto = ${req.params.id_produto} and id_cliente = ${req.params.id_cliente}
@@ -359,7 +359,7 @@ pedidos.put("/atualizar/status/:id_pedido/:token/:mesa/:id_cliente", function (r
         else if (token_decodificado.data == "newLoginCliente") {
 
             database.query(`
-            update public.pedido_cabecalho set status = 'PENDENTE' where id_cliente = ${req.params.id_cliente}
+            update public.pedido_cabecalho set status = 'PENDENTE' where id_cliente = ${req.params.id_cliente} and id_pedido = ${req.params.id_pedido}
             `, function (erro) {
 
                 if (erro) {

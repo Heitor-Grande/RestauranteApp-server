@@ -15,25 +15,39 @@ mesas.post("/criar/mesa/:tokenJWT/:id_cliente", function (req, res) {
         }
         else if (token_validado.data == "newLoginCasa") {
 
-            database.query(`
-            insert into public.mesas (total, status, chamado, id_cliente)
-            values('0', 'true', 'false', ${req.params.id_cliente})
+            database.query(`select num_mesa from public.mesas where id_cliente = ${req.params.id_cliente}`,
+                function (erro, resposta) {
+
+                    if (erro) {
+
+                        res.send({
+                            message: erro.message,
+                            codigo: 400
+                        })
+                    }
+                    else {
+                        
+                        database.query(`
+            insert into public.mesas (total, status, chamado, id_cliente, num_mesa)
+            values('0', 'true', 'false', ${req.params.id_cliente}, ${resposta.rows[0] ? resposta.rows[0].num_mesa + 1 : 1})
             `, function (erro) {
-                if (erro) {
+                            if (erro) {
 
-                    res.send({
-                        message: erro.message,
-                        codigo: 400
-                    })
-                }
-                else {
+                                res.send({
+                                    message: erro.message,
+                                    codigo: 400
+                                })
+                            }
+                            else {
 
-                    res.send({
-                        message: "Mesa criada com sucesso.",
-                        codigo: 200
-                    })
-                }
-            })
+                                res.send({
+                                    message: "Mesa criada com sucesso.",
+                                    codigo: 200
+                                })
+                            }
+                        })
+                    }
+                })
         }
         else {
 
@@ -358,9 +372,9 @@ mesas.get("/carregar/mesa/pedidosConcluidos/:token/:id_mesa/:id_cliente", functi
 })
 
 //verifica se mesa está aberta para cliente entrar usando qrcode
-mesas.get("/validar/mesa/:id_mesa/:id_cliente", function (req, res) {
+mesas.get("/validar/mesa/:num_mesa/:id_cliente", function (req, res) {
 
-    database.query(`select * from mesas where id_mesa = ${req.params.id_mesa}`, function (erro, mesa) {
+    database.query(`select * from mesas where num_mesa = ${req.params.num_mesa} and id_cliente = ${req.params.id_cliente}`, function (erro, mesa) {
 
         if (erro) {
 
@@ -372,6 +386,7 @@ mesas.get("/validar/mesa/:id_mesa/:id_cliente", function (req, res) {
         else if (mesa.rows[0].status == true) {
 
             res.send({
+                mesa: mesa.rows,
                 codigo: 200
             })
         }

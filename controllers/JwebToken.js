@@ -17,8 +17,13 @@ criarJWT.get("/criar/jwt/:token_acesso", VerificatokenAcesso, function(req, res)
         }
         else if(token){
 
-            res.send({
+            const dados ={
                 token: token,
+                id_cliente: req.id_cliente
+            }
+
+            res.send({
+                token: dados,
                 codigo: 200
             })
         }

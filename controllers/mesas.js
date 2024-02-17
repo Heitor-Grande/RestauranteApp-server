@@ -324,7 +324,7 @@ mesas.get("/load/mesa/pedidos/:token/:id_mesa/:id_cliente", function (req, res) 
     })
 })
 
-//carrega pedidos da mesa concluidos para levar na mesa
+//carrega pedidos da mesa 
 mesas.get("/carregar/mesa/pedidosConcluidos/:token/:id_mesa/:id_cliente", function (req, res) {
 
     verificaJWT(req.params.token, function (erro, token_validado) {

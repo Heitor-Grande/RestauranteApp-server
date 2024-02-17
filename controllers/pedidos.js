@@ -32,7 +32,7 @@ pedidos.post("/criar/pedido/:id_mesa/:token/:id_produto/:id_cliente", function (
                     //ja existe um cabecalho, preciso adicionar um pedido detalhe
 
                     database.query(`
-                        select * from public.produtos where id_produto = ${req.params.id_produto}
+                        select * from public.produtos where id_produto = ${req.params.id_produto} and id_cliente = ${req.params.id_cliente}
                     `, function (erro, produto) {
 
                         if (erro) {
@@ -47,8 +47,8 @@ pedidos.post("/criar/pedido/:id_mesa/:token/:id_produto/:id_cliente", function (
                             const total = produto.rows[0].preco * req.body.qtde
                             database.query(`
                                     INSERT INTO public.pedido_detalhe
-                                    (id_pedido, produto, qtd, valor_und, total, obs)
-                                    VALUES(${pedido.rows[0].id_pedido}, '${produto.rows[0].nome}', ${req.body.qtde}, ${produto.rows[0].preco}, ${total}, '${req.body.obs}')
+                                    (id_pedido, produto, qtd, valor_und, total, obs, id_cliente)
+                                    VALUES(${pedido.rows[0].id_pedido}, '${produto.rows[0].nome}', ${req.body.qtde}, ${produto.rows[0].preco}, ${total}, '${req.body.obs}', ${req.params.id_cliente})
                                     `, function (erro) {
 
                                 if (erro) {
@@ -74,8 +74,8 @@ pedidos.post("/criar/pedido/:id_mesa/:token/:id_produto/:id_cliente", function (
                     //preciso criar o cabecalho e o pedido detalhe
                     database.query(`
                     INSERT INTO public.pedido_cabecalho
-                    (mesa, status, cliente, limpou_mesa)
-                    VALUES(${req.params.id_mesa}, 'MONTANDO', '${req.body.cliente}', 0) RETURNING *
+                    (mesa, status, cliente, limpou_mesa, id_cliente)
+                    VALUES(${req.params.id_mesa}, 'MONTANDO', '${req.body.cliente}', 0, ${req.params.id_cliente}) RETURNING *
                     `, function (erro, insert) {
 
                         if (erro) {
@@ -90,7 +90,7 @@ pedidos.post("/criar/pedido/:id_mesa/:token/:id_produto/:id_cliente", function (
 
                             database.query(`
                             SELECT *
-                            FROM public.produtos where id_produto = ${req.params.id_produto}
+                            FROM public.produtos where id_produto = ${req.params.id_produto} and id_cliente = ${req.params.id_cliente}
                             `, function (erro, produto) {
 
                                 if (erro) {
@@ -106,8 +106,8 @@ pedidos.post("/criar/pedido/:id_mesa/:token/:id_produto/:id_cliente", function (
 
                                     database.query(`
                                     INSERT INTO public.pedido_detalhe
-                                    (id_pedido, produto, qtd, valor_und, total, obs)
-                                    VALUES(${insert.rows[0].id_pedido}, '${produto.rows[0].nome}', ${req.body.qtde}, ${produto.rows[0].preco}, ${total}, '${req.body.obs}')
+                                    (id_pedido, produto, qtd, valor_und, total, obs, id_cliente)
+                                    VALUES(${insert.rows[0].id_pedido}, '${produto.rows[0].nome}', ${req.body.qtde}, ${produto.rows[0].preco}, ${total}, '${req.body.obs}', ${req.params.id_cliente})
                                     `, function (erro) {
 
                                         if (erro) {
@@ -160,7 +160,7 @@ pedidos.get("/carregar/pedidos/:id_mesa/:token/:id_cliente", function (req, res)
             SELECT pc.id_pedido, pc.mesa, pc.limpou_mesa, pc.cliente, pc.status, SUM(pd.total) AS soma_pedido 
             FROM public.pedido_cabecalho pc 
             JOIN public.pedido_detalhe pd ON pd.id_pedido = pc.id_pedido 
-            WHERE pc.mesa = ${req.params.id_mesa} AND pc.limpou_mesa = 0 and id_cliente = ${req.params.id_cliente}
+            WHERE pc.mesa = ${req.params.id_mesa} AND pc.limpou_mesa = 0 and pc.id_cliente = ${req.params.id_cliente}
             GROUP BY pc.id_pedido, pc.mesa, pc.limpou_mesa
             `, function (erro, pedidos) {
 
@@ -403,8 +403,9 @@ pedidos.get("/all/pedidos/pendentes/:token/:status/:id_cliente", function (req, 
         }
         else if (token_decodificado.data == "newLoginCasa") {
             database.query(`
-            select * from public.pedido_cabecalho
-            where status like '${req.params.status}' and limpou_mesa = 0 and id_cliente = ${req.params.id_cliente}
+            select pc.*, m.num_mesa from public.pedido_cabecalho pc
+            JOIN public.mesas m on m.id_mesa = pc.mesa
+            where pc.status like '${req.params.status}' and pc.limpou_mesa = 0 and pc.id_cliente = ${req.params.id_cliente}
             `, function (erro, pedidos_pendentes) {
                 if (erro) {
 
@@ -414,7 +415,7 @@ pedidos.get("/all/pedidos/pendentes/:token/:status/:id_cliente", function (req, 
                     })
                 }
                 else {
-
+                    
                     res.send({
                         codigo: 200,
                         pedidos: pedidos_pendentes.rows

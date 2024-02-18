@@ -3,10 +3,11 @@ const database = require("../database/dbConnection")
 
 function VerificatokenAcesso(req, res, next) {
     
-    const token = descriptografar(req.params.token_acesso)
+    const tokenCriptografado = req.params.token_acesso.replace(/-/g, "/")
+    const token = descriptografar(tokenCriptografado)
 
     database.query(`
-        select id_cliente, token_acesso, bloqueio from public.clientes_filial where token_acesso = '${token}'
+        select fantasia, id_cliente, token_acesso, bloqueio from public.clientes_filial where token_acesso = '${token}'
     `, function (erro, token_acesso) {
 
         if (erro) {

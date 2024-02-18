@@ -7,7 +7,7 @@ const { criptografar } = require("../functions/crypto")
 integracoes.post("/add/cliente/:cnpj_filial", function (req, res) {
 
     database.query(`
-        select * from public.filial where cnpj = ${req.params.cnpj_filial}
+        select * from public.filial where cnpj = '${req.params.cnpj_filial}'
     `, function (erro, filial) {
 
         if (erro) {
@@ -36,7 +36,7 @@ integracoes.post("/add/cliente/:cnpj_filial", function (req, res) {
                     database.query(`
                     INSERT INTO public.clientes_filial
                     (fantasia, cnpj, filial, bloqueio, motivo_bloqueio, token_acesso)
-                    VALUES('${fantasia}', '${cnpj}', ${filial.rows[0].id_filial}, false, '', '${cnpj + "-" + fantasia}');
+                    VALUES('${fantasia}', '${cnpj}', ${filial.rows[0].id_filial}, false, '', '${cnpj + "-" + fantasia}')
                     `, function (erro) {
 
                         if (erro) {
@@ -51,7 +51,7 @@ integracoes.post("/add/cliente/:cnpj_filial", function (req, res) {
                             res.send({
                                 codigo: 200,
                                 message: "Cliente criado com sucesso e vinculado à filial.",
-                                link: `${process.env.REACT_APP_LINKQR}/entrar/criar/token/casa/${token_acesso}`
+                                link: `${process.env.REACT_APP_LINKQR}/entrar/criar/token/casa/${token_acesso.replace(/\//g, "-")}`
                             })
                         }
                     })
@@ -68,7 +68,7 @@ integracoes.post("/add/cliente/:cnpj_filial", function (req, res) {
         else {
 
             res.send({
-                message: "Erro desconhecido",
+                message: "Nenhuma Filial encontrada",
                 codigo: 400
             })
         }
@@ -79,9 +79,9 @@ integracoes.post("/add/cliente/:cnpj_filial", function (req, res) {
 integracoes.get("/consultar/acesso/:cnpj_filial/:cnpj_cliente", function (req, res) {
 
     database.query(`
-        select c.* public.filial f
-        JOIN public.clientes.filial c on c.filial = f.id_filial
-        where f.cnpj = ${req.params.cnpj_filial} and c.cnpj = ${req.params.cnpj_cliente}
+        select c.* from public.filial f
+        JOIN public.clientes_filial c on c.filial = f.id_filial
+        where f.cnpj = '${req.params.cnpj_filial}' and c.cnpj = '${req.params.cnpj_cliente}'
     `, function (erro, cliente) {
 
         if (erro) {
@@ -98,7 +98,7 @@ integracoes.get("/consultar/acesso/:cnpj_filial/:cnpj_cliente", function (req, r
             res.send({
                 codigo: 200,
                 message: "Link de acesso à cozinha gerado com sucesso.",
-                link: `${process.env.REACT_APP_LINKQR}/entrar/criar/token/casa/${token_acesso}`
+                link: `${process.env.REACT_APP_LINKQR}/entrar/criar/token/casa/${token_acesso.replace(/\//g, "-")}`
             })
         }
         else if (cliente.rows.length > 1) {
@@ -131,8 +131,8 @@ integracoes.post('/sinc/prod/:cnpj_filial/:cnpj_cliente', function (req, res) {
 
     database.query(`
     select f.cnpj as cnpj_filial, f.bloqueio as bloqueio_filial, c.id_cliente, c.cnpj from public.filial f
-    JOIN public.clientes.filial c on c.filial = f.id_filial
-    where f.cnpj = ${req.params.cnpj_filial} and c.cnpj = ${req.params.cnpj_cliente}
+    JOIN public.clientes_filial c on c.filial = f.id_filial
+    where f.cnpj = '${req.params.cnpj_filial}' and c.cnpj = '${req.params.cnpj_cliente}'
     `, function (erro, filial_cliente) {
 
         if (erro) {
@@ -142,7 +142,7 @@ integracoes.post('/sinc/prod/:cnpj_filial/:cnpj_cliente', function (req, res) {
                 message: erro.message
             })
         }
-        else if (filial_cliente.rows == 1) {
+        else if (filial_cliente.rows.length == 1) {
 
             if (filial_cliente.rows[0].bloqueio_filial == true) {
 
@@ -162,9 +162,9 @@ integracoes.post('/sinc/prod/:cnpj_filial/:cnpj_cliente', function (req, res) {
 
                 const lista = req.body.lista
                 let respostaEnviada = false
-                for (let i = 0; lista.length < i; i = i + 1) {
+                for (let i = 0; i < lista.length; i = i + 1) {
 
-                    database.query(`select * from public.produtos where cod_pdv = '${lista[i].cod_pdv}' and id_cliente = ${filial_cliente[0].id_cliente}`, function (erro, produto) {
+                    database.query(`select * from public.produtos where cod_pdv = '${lista[i].cod_pdv}' and id_cliente = ${filial_cliente.rows[0].id_cliente}`, function (erro, produto) {
 
                         if (erro && respostaEnviada == false) {
 
@@ -174,7 +174,7 @@ integracoes.post('/sinc/prod/:cnpj_filial/:cnpj_cliente', function (req, res) {
                                 message: `Erro ao procurar produto: ${erro.message}`
                             })
                         }
-                        else if (produto.rows == 1) {
+                        else if (produto.rows.length == 1) {
                             //faz update
                             database.query(`
                             UPDATE public.produtos
@@ -182,9 +182,9 @@ integracoes.post('/sinc/prod/:cnpj_filial/:cnpj_cliente', function (req, res) {
                             status='${lista[i].status}', img='${lista[i].img}',
                             nome='${lista[i].nome}', descricao='${lista[i].descricao}', 
                             id_categoria=${lista[i].id_categoria}, cod_pdv = '${lista[i].cod_pdv}'
-                            WHERE cod_pdv = '${lista[i].cod_pdv}' and id_cliente = ${filial_cliente[0].id_cliente}
+                            WHERE cod_pdv = '${lista[i].cod_pdv}' and id_cliente = ${filial_cliente.rows[0].id_cliente}
                             `, function (erro) {
-
+                                
                                 if (erro && respostaEnviada == false) {
 
                                     respostaEnviada = true
@@ -193,7 +193,7 @@ integracoes.post('/sinc/prod/:cnpj_filial/:cnpj_cliente', function (req, res) {
                                         message: `Erro ao sincronizar produtos: ${erro.message}`
                                     })
                                 }
-                                else if (respostaEnviada == false && lista.length == i) {
+                                else if (respostaEnviada == false && (lista.length - 1) == i) {
 
                                     respostaEnviada = true
                                     res.send({
@@ -203,7 +203,7 @@ integracoes.post('/sinc/prod/:cnpj_filial/:cnpj_cliente', function (req, res) {
                                 }
                             })
                         }
-                        else if (produto.rows > 1 && respostaEnviada == false) {
+                        else if (produto.rows.length > 1 && respostaEnviada == false) {
 
                             respostaEnviada = true
                             res.send({
@@ -215,7 +215,7 @@ integracoes.post('/sinc/prod/:cnpj_filial/:cnpj_cliente', function (req, res) {
                             //faz insert
                             database.query(` insert into public.produtos (nome, preco, descricao, status, img, id_categoria, id_cliente, cod_pdv)
                             values('${lista[i].nome}', '${lista[i].preco}', '${lista[i].descricao}', '${lista[i].status}', '${lista[i].img}', ${lista[i].id_categoria}, 
-                            ${filial_cliente[0].id_cliente}, '${lista[i].cod_pdv}')`,
+                            ${filial_cliente.rows[0].id_cliente}, '${lista[i].cod_pdv}')`,
                                 function (erro) {
 
                                     if (erro && respostaEnviada == false) {
@@ -226,7 +226,7 @@ integracoes.post('/sinc/prod/:cnpj_filial/:cnpj_cliente', function (req, res) {
                                             message: `Erro ao sincronizar produtos: ${erro.message}`
                                         })
                                     }
-                                    else if (respostaEnviada == false && lista.length == i) {
+                                    else if (respostaEnviada == false && (lista.length - 1) == i) {
 
                                         respostaEnviada = true
                                         res.send({
@@ -249,3 +249,5 @@ integracoes.post('/sinc/prod/:cnpj_filial/:cnpj_cliente', function (req, res) {
         }
     })
 })
+
+module.exports = integracoes

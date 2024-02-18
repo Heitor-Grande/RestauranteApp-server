@@ -15,7 +15,8 @@ mesas.post("/criar/mesa/:tokenJWT/:id_cliente", function (req, res) {
         }
         else if (token_validado.data == "newLoginCasa") {
 
-            database.query(`select num_mesa from public.mesas where id_cliente = ${req.params.id_cliente}`,
+            database.query(`select num_mesa from public.mesas 
+            where id_cliente = ${req.params.id_cliente} order by num_mesa desc`,
                 function (erro, resposta) {
 
                     if (erro) {
@@ -26,7 +27,7 @@ mesas.post("/criar/mesa/:tokenJWT/:id_cliente", function (req, res) {
                         })
                     }
                     else {
-                        
+
                         database.query(`
             insert into public.mesas (total, status, chamado, id_cliente, num_mesa)
             values('0', 'true', 'false', ${req.params.id_cliente}, ${resposta.rows[0] ? resposta.rows[0].num_mesa + 1 : 1})
@@ -453,5 +454,6 @@ mesas.put("/chamado/:status_chamado/:token/:id_mesa/:id_cliente", function (req,
         }
     })
 })
+
 module.exports = mesas
 

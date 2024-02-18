@@ -4,7 +4,7 @@ const database = require("../database/dbConnection")
 function VerificatokenAcesso(req, res, next) {
     
     const token = descriptografar(req.params.token_acesso)
-    
+
     database.query(`
         select id_cliente, token_acesso, bloqueio from public.clientes_filial where token_acesso = '${token}'
     `, function (erro, token_acesso) {
@@ -31,7 +31,7 @@ function VerificatokenAcesso(req, res, next) {
         else {
 
             res.send({
-                message: "Erro ao encontrar cadastro no sistema",
+                message: "Erro ao encontrar token de acesso.",
                 codigo: 400
             })
         }

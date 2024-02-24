@@ -74,8 +74,21 @@ mesas.get("/selecionar/mesas/:tokenJWT/:id_cliente", function (req, res) {
         else if (token_validado.data == "newLoginCasa") {
 
             database.query(`
-                select * from public.mesas where id_cliente = ${req.params.id_cliente} order by id_mesa asc
+                SELECT 
+                    m.*,
+                    (SELECT COUNT(pc.status) 
+                    FROM pedido_cabecalho pc 
+                    WHERE pc.mesa = m.id_mesa
+                    AND pc.status <> 'CONCLUIDO' 
+                    AND pc.status <> 'MONTANDOA') AS qtdnao_pronto
+                FROM 
+                    public.mesas m 
+                WHERE 
+                    m.id_cliente = ${req.params.id_cliente}
+                ORDER BY 
+                    m.id_mesa ASC;
             `, function (erro, mesas) {
+
                 if (erro) {
 
                     res.send({

@@ -9,4 +9,12 @@ const database = new postgres.Pool({
     password: process.env.PASS
 })
 
+database.connect().then(function(conect){
+
+    console.log("Conectado ao banco com sucesso")
+}).catch(function(erro){
+
+    console.log(erro)
+})
+
 module.exports = database;

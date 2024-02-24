@@ -80,7 +80,7 @@ mesas.get("/selecionar/mesas/:tokenJWT/:id_cliente", function (req, res) {
                     FROM pedido_cabecalho pc 
                     WHERE pc.mesa = m.id_mesa
                     AND pc.status <> 'CONCLUIDO' 
-                    AND pc.status <> 'MONTANDOA') AS qtdnao_pronto
+                    AND pc.status <> 'MONTANDO' AND pc.status <> 'CANCELADO') AS qtdnao_pronto
                 FROM 
                     public.mesas m 
                 WHERE 

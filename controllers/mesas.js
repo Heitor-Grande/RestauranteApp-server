@@ -261,24 +261,51 @@ mesas.put('/limpa/mesa/:id_mesa/:token/:id_cliente', function (req, res) {
         }
         else if (token_validado.data == "newLoginCasa") {
 
+
             database.query(`
-            update public.pedido_cabecalho set limpou_mesa = 1 where mesa = ${req.params.id_mesa} and id_cliente = ${req.params.id_cliente}
-            `, function (erro) {
+            select count(*) from  pedido_cabecalho pc 
+            where status <> 'CANCELADO' and status <> 'CONCLUIDO' 
+            and id_cliente = ${req.params.id_cliente} and mesa = ${req.params.id_mesa}
+            `, function (erro, qtdPedidosValidos) {
 
                 if (erro) {
+
 
                     res.send({
                         codigo: 400,
                         message: erro.message
                     })
                 }
+                else if (qtdPedidosValidos.rows[0].count == 0) {
+
+                    database.query(`
+                    update public.pedido_cabecalho set limpou_mesa = 1 where mesa = ${req.params.id_mesa} and id_cliente = ${req.params.id_cliente}
+                    `, function (erro) {
+
+                        if (erro) {
+
+                            res.send({
+                                codigo: 400,
+                                message: erro.message
+                            })
+                        }
+                        else {
+
+                            res.send({
+                                codigo: 200,
+                                message: "Sucesso ao limpar mesa"
+                            })
+                        }
+                    })
+                }
                 else {
 
                     res.send({
-                        codigo: 200,
-                        message: "Sucesso ao limpar mesa"
+                        codigo: 400,
+                        message: "Falha ao limpar mesa, ainda possuí pedidos pendentes ou processando."
                     })
                 }
+
             })
         }
         else {

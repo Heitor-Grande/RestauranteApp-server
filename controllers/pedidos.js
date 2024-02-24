@@ -47,8 +47,8 @@ pedidos.post("/criar/pedido/:id_mesa/:token/:id_produto/:id_cliente", function (
                             const total = produto.rows[0].preco * req.body.qtde
                             database.query(`
                                     INSERT INTO public.pedido_detalhe
-                                    (id_pedido, produto, qtd, valor_und, total, obs, id_cliente)
-                                    VALUES(${pedido.rows[0].id_pedido}, '${produto.rows[0].nome}', ${req.body.qtde}, ${produto.rows[0].preco}, ${total}, '${req.body.obs}', ${req.params.id_cliente})
+                                    (id_pedido, produto, qtd, valor_und, total, obs, id_cliente, cod_pdv)
+                                    VALUES(${pedido.rows[0].id_pedido}, '${produto.rows[0].nome}', ${req.body.qtde}, ${produto.rows[0].preco}, ${total}, '${req.body.obs}', ${req.params.id_cliente}, '${produto.rows[0].cod_pdv}')
                                     `, function (erro) {
 
                                 if (erro) {
@@ -106,8 +106,8 @@ pedidos.post("/criar/pedido/:id_mesa/:token/:id_produto/:id_cliente", function (
 
                                     database.query(`
                                     INSERT INTO public.pedido_detalhe
-                                    (id_pedido, produto, qtd, valor_und, total, obs, id_cliente)
-                                    VALUES(${insert.rows[0].id_pedido}, '${produto.rows[0].nome}', ${req.body.qtde}, ${produto.rows[0].preco}, ${total}, '${req.body.obs}', ${req.params.id_cliente})
+                                    (id_pedido, produto, qtd, valor_und, total, obs, id_cliente, cod_pdv)
+                                    VALUES(${insert.rows[0].id_pedido}, '${produto.rows[0].nome}', ${req.body.qtde}, ${produto.rows[0].preco}, ${total}, '${req.body.obs}', ${req.params.id_cliente}, '${produto.rows[0].cod_pdv}')
                                     `, function (erro) {
 
                                         if (erro) {

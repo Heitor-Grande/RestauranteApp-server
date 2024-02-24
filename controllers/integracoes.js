@@ -2,6 +2,7 @@ const express = require("express")
 const integracoes = express.Router()
 const database = require("../database/dbConnection")
 const { criptografar } = require("../functions/crypto")
+const VerificatokenAcesso = require("../functions/verificaTokenAcesso")
 
 //cadastra novo cliente e gera token_acesso
 integracoes.post("/add/cliente/:cnpj_filial", function (req, res) {
@@ -51,7 +52,8 @@ integracoes.post("/add/cliente/:cnpj_filial", function (req, res) {
                             res.send({
                                 codigo: 200,
                                 message: "Cliente criado com sucesso e vinculado à filial.",
-                                link: `${process.env.REACT_APP_LINKQR}/entrar/criar/token/casa/${token_acesso.replace(/\//g, "-")}`
+                                link: `${process.env.REACT_APP_LINKQR}/entrar/criar/token/casa/${token_acesso.replace(/\//g, "-")}`,
+                                token: token_acesso.replace(/\//g, "-")
                             })
                         }
                     })
@@ -98,7 +100,8 @@ integracoes.get("/consultar/acesso/:cnpj_filial/:cnpj_cliente", function (req, r
             res.send({
                 codigo: 200,
                 message: "Link de acesso à cozinha gerado com sucesso.",
-                link: `${process.env.REACT_APP_LINKQR}/entrar/criar/token/casa/${token_acesso.replace(/\//g, "-")}`
+                link: `${process.env.REACT_APP_LINKQR}/entrar/criar/token/casa/${token_acesso.replace(/\//g, "-")}`,
+                token: token_acesso.replace(/\//g, "-")
             })
         }
         else if (cliente.rows.length > 1) {
@@ -127,7 +130,7 @@ integracoes.get("/consultar/acesso/:cnpj_filial/:cnpj_cliente", function (req, r
 })
 
 //rota para inserir produtos pdv do cliente 
-integracoes.post('/sinc/prod/:cnpj_filial/:cnpj_cliente', function (req, res) {
+integracoes.post('/sinc/prod/:cnpj_filial/:cnpj_cliente/:token_acesso', VerificatokenAcesso, function (req, res) {
 
     database.query(`
     select f.cnpj as cnpj_filial, f.bloqueio as bloqueio_filial, c.id_cliente, c.cnpj from public.filial f
@@ -181,10 +184,10 @@ integracoes.post('/sinc/prod/:cnpj_filial/:cnpj_cliente', function (req, res) {
                             SET preco='${lista[i].preco}', 
                             status='${lista[i].status}', img='${lista[i].img}',
                             nome='${lista[i].nome}', descricao='${lista[i].descricao}', 
-                            id_categoria=${lista[i].id_categoria}, cod_pdv = '${lista[i].cod_pdv}'
+                            id_categoria=${produto.rows[0].id_categoria}, cod_pdv = '${lista[i].cod_pdv}'
                             WHERE cod_pdv = '${lista[i].cod_pdv}' and id_cliente = ${filial_cliente.rows[0].id_cliente}
                             `, function (erro) {
-                                
+
                                 if (erro && respostaEnviada == false) {
 
                                     respostaEnviada = true
@@ -214,7 +217,7 @@ integracoes.post('/sinc/prod/:cnpj_filial/:cnpj_cliente', function (req, res) {
                         else {
                             //faz insert
                             database.query(` insert into public.produtos (nome, preco, descricao, status, img, id_categoria, id_cliente, cod_pdv)
-                            values('${lista[i].nome}', '${lista[i].preco}', '${lista[i].descricao}', '${lista[i].status}', '${lista[i].img}', ${lista[i].id_categoria}, 
+                            values('${lista[i].nome}', '${lista[i].preco}', '${lista[i].descricao}', '${lista[i].status}', '${lista[i].img}', 1, 
                             ${filial_cliente.rows[0].id_cliente}, '${lista[i].cod_pdv}')`,
                                 function (erro) {
 
@@ -245,6 +248,47 @@ integracoes.post('/sinc/prod/:cnpj_filial/:cnpj_cliente', function (req, res) {
             res.send({
                 codigo: 400,
                 message: "Cliente não encontrado"
+            })
+        }
+    })
+})
+
+//carregar pedido da mesa e limpar
+integracoes.get("/carrega/pedidosmesa/:num_mesa/:cnpj_filial/:cnpj_cliente/:token_acesso", VerificatokenAcesso, function (req, res) {
+
+    database.query(`select pc.*, pd.*, m.id_mesa  from pedido_cabecalho pc 
+    join pedido_detalhe pd on pd.id_pedido = pc.id_pedido
+    join mesas m on m.num_mesa = ${req.params.num_mesa}
+    where pc.id_cliente = '${req.id_cliente}' and pc.limpou_mesa = 0 
+    and pc.status = 'CONCLUIDO' and m.id_cliente = '${req.id_cliente}'`, function (erro, pedidos_mesa) {
+
+        if (erro) {
+
+            res.send({
+                codigo: 400,
+                message: erro.message
+            })
+        }
+        else if (pedidos_mesa.rows.length > 0) {
+
+            res.send({
+                codigo: 200,
+                message: "Sucesso ao carregar pedidos concluidos da mesa.",
+                pedidos: pedidos_mesa.rows
+            })
+        }
+        else if (pedidos_mesa.rows.length == 0) {
+
+            res.send({
+                codigo: 400,
+                message: "Mesa sem pedidos concluidos"
+            })
+        }
+        else {
+
+            res.send({
+                codigo: 400,
+                message: "Um erro inesperado  aconteceu."
             })
         }
     })

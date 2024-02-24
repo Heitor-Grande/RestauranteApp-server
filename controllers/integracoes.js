@@ -253,7 +253,7 @@ integracoes.post('/sinc/prod/:cnpj_filial/:cnpj_cliente/:token_acesso', Verifica
     })
 })
 
-//carregar pedido da mesa e limpar
+//carregar pedidos concluidos, deve ser usado antes de limpar a mesa
 integracoes.get("/carrega/pedidosmesa/:num_mesa/:cnpj_filial/:cnpj_cliente/:token_acesso", VerificatokenAcesso, function (req, res) {
 
     database.query(`select pc.*, pd.*, m.id_mesa  from pedido_cabecalho pc 
